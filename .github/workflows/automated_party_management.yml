@@ -1,0 +1,52 @@
+name: Team Automation Management
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  schedule:
+    - cron: '0/20 * * * *' # Change to every twenty minutes
+  workflow_dispatch:
+
+jobs:
+  management_and_description:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Execute management script
+        env:
+          HABITICA_USER_ID: ${{ secrets.HABITICA_USER_ID }}
+          HABITICA_API_KEY: ${{ secrets.HABITICA_API_KEY }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: python scripts/manage_members.py
+
+      - name: Execute update script
+        env:
+          HABITICA_USER_ID: ${{ secrets.HABITICA_USER_ID }}
+          HABITICA_API_KEY: ${{ secrets.HABITICA_API_KEY }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: python scripts/update_description.py
+
+      - name: Commit log changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add logs/update_description.log
+          git add logs/manage_members.log
+          git commit -m "Update logs/update_description.log & logs/manage_members.log from GitHub Actions"
+
+      - name: Push log changes
+        run: |
+          git push
